@@ -1,8 +1,11 @@
+import six
+
 from scrapy import signals
 from scrapy.exceptions import DontCloseSpider
 from scrapy.spiders import Spider, CrawlSpider
 
 from . import connection
+from .utils import bytes_to_str
 
 
 # Default batch size matches default concurrent requests setting.
@@ -16,6 +19,7 @@ class RedisMixin(object):
     redis_key = None
     # Fetch this amount of start urls when idle. Default to DEFAULT_START_URLS_BATCH_SIZE.
     redis_batch_size = None
+    redis_encoding = 'utf-8'
     # Redis client instance.
     server = None
 
@@ -74,7 +78,6 @@ class RedisMixin(object):
         """Returns a request to be scheduled or none."""
         use_set = self.settings.getbool('REDIS_START_URLS_AS_SET')
         fetch_one = self.server.spop if use_set else self.server.lpop
-        # XXX: Do we need to use a timeout here?
         found = 0
         while found < self.redis_batch_size:
             data = fetch_one(self.redis_key)
@@ -93,10 +96,19 @@ class RedisMixin(object):
 
     def make_request_from_data(self, data):
         # By default, data is an URL.
-        if '://' in data:
-            return self.make_requests_from_url(data)
-        else:
-            self.logger.error("Unexpected URL from '%s': %r", self.redis_key, data)
+        if not isinstance(data, six.string_types):
+            # XXX: Shall we log and continue?
+            raise TypeError("Wrong type for data: %s" % type(data))
+
+        url = bytes_to_str(data, self.redis_encoding)
+        # FIXME: This is a naive guard against using a wrong redis_key where
+        # data are not string URLs.
+        if '://' not in url:
+            # XXX: Shall this be an exception?
+            self.logger.error("Missing scheme in URL: '%s'", url)
+            return
+
+        return self.make_requests_from_url(url)
 
     def schedule_next_requests(self):
         """Schedules a request if available"""
