@@ -1,6 +1,3 @@
-# Config file for automatic testing at travis-ci.org
-# This file will be regenerated if you run travis_pypi_setup.py
-
 language: python
 python: 3.5
 sudo: false
@@ -9,17 +6,12 @@ services:
   - redis-server
 
 env:
-  - SCRAPY_VER=10 PYTHON_VER=27
-  - SCRAPY_VER=11 PYTHON_VER=27
-  - SCRAPY_VER=11 PYTHON_VER=34
-  - SCRAPY_VER=11 PYTHON_VER=35
-  - SCRAPY_VER=10 PYTHON_VER=py
-  - SCRAPY_VER=11 PYTHON_VER=py
+  - TOXENV=py27-scrapyrel
+  - TOXENV=py34-scrapyrel
+  - TOXENV=py35-scrapyrel
 
 matrix:
-  allow_failures:
-    - env: SCRAPY_VER=10 PYTHON_VER=py
-    - env: SCRAPY_VER=11 PYTHON_VER=py
+  fast_finish: true
 
 before_install:
   - python --version
@@ -28,36 +20,49 @@ before_install:
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: 
-  - pip install -U tox twine
-  - pip install -U coverage
+  - pip install -U pip wheel
+  - pip install -U tox twine coverage
   - virtualenv --version
-  - easy_install --version
   - pip --version
   - tox --version
 
 # command to run tests, e.g. python setup.py test
 script:
-  - tox -e py${PYTHON_VER}-scrapy${SCRAPY_VER}
+  - tox -e $TOXENV --workdir $HOME/.tox
 
 after_success:
-    - |
-      # Codecov requires a single .coverage and will run 'coverage xml' to
-      # generate the report.
-      coverage combine
-      bash <(curl -s https://codecov.io/bash)
+  # Codecov requires a single .coverage and will run 'coverage xml' to
+  # generate the report.
+  - coverage combine
+  - bash <(curl -s https://codecov.io/bash)
 
 after_failure:
-  - more .tox/log/* | cat
-  - more .tox/*/log/* | cat
+  - more $HOME/.tox/log/* | cat
+  - more $HOME/.tox/*/log/* | cat
 
 before_cache:
   - rm -fr $HOME/.cache/pip/log
+  - rm -fr $HOME/.tox/log/*
+  - rm -fr $HOME/.tox/*/log/*
 
 cache:
-  diretories:
+  directories:
     - $HOME/.cache/pip
+    - $HOME/.tox/
 
 notifications:
   email:
     on_sucess: never
     on_failure: always
+
+deploy:
+  provider: pypi
+  distributions: "sdist bdist_wheel"
+  user: darkrho
+  password:
+    secure: "Pgcj+Otx9o2MxOuXibvz9LUd5DqlW0jaKDScVOAcFT+//U0esjRqY08bRFQlrSTXokJa6X/dVZlb2mQE8L4vr7mLFspRGO4FByK34L089/ETwsLKI2rks2zVbmPSyweL3sz88EXLKmYs7WsKtCnET67qra6hreKbO67ALAh5WWk="
+  on:
+    tags: true
+    all_branches: true
+    repo: rolando/scrapy-redis
+    condition: "$TOXENV == py35-scrapyrel"

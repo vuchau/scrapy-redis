@@ -55,7 +55,7 @@ Requirements
 
 * Python 2.7, 3.4 or 3.5
 * Redis >= 2.8
-* ``Scrapy`` >= 1.0
+* ``Scrapy`` >= 1.1
 * ``redis-py`` >= 2.10
 
 Usage
@@ -80,15 +80,15 @@ Use the following settings in your project:
   # 'json' or 'msgpack' as serializers.
   #SCHEDULER_SERIALIZER = "scrapy_redis.picklecompat"
 
-
   # Don't cleanup redis queues, allows to pause/resume crawls.
   #SCHEDULER_PERSIST = True
 
   # Schedule requests using a priority queue. (default)
-  #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.SpiderPriorityQueue'
+  #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.PriorityQueue'
 
-  # Schedule requests using a queue (FIFO).
-  #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.SpiderQueue'
+  # Alternative queues.
+  #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
+  #SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.LifoQueue'
 
   # Max idle time to prevent the spider from being closed when distributed crawling.
   # This only works if queue class is SpiderQueue or SpiderStack,
@@ -120,16 +120,17 @@ Use the following settings in your project:
   # Use custom redis client class.
   #REDIS_PARAMS['redis_cls'] = 'myproject.RedisClient'
 
-  # If True, it uses redis' ``spop`` operation. This could be useful if you
-  # want to avoid duplicates in your start urls list. In this cases, urls must
-  # be added via ``sadd`` command or you will get a type error from redis.
+  # If True, it uses redis' ``SPOP`` operation. You have to use the ``SADD``
+  # command to add URLs to the redis queue. This could be useful if you
+  # want to avoid duplicates in your start urls list and the order of
+  # processing does not matter.
   #REDIS_START_URLS_AS_SET = False
-
-  # How many start urls to fetch at once.
-  #REDIS_START_URLS_BATCH_SIZE = 16
 
   # Default start urls key for RedisSpider and RedisCrawlSpider.
   #REDIS_START_URLS_KEY = '%(name)s:start_urls'
+
+  # Use other encoding than utf-8 for redis.
+  #REDIS_ENCODING = 'latin1'
 
 .. note::
 

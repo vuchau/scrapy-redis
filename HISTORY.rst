@@ -4,6 +4,16 @@ History
 
 .. comment:: bumpversion marker
 
+0.7.0-dev (unreleased)
+------------------
+
+0.6.4 (2016-12-18)
+------------------
+* Fixed data decoding in Python 3.x.
+* Added ``REDIS_ENCODING`` setting (default ``utf-8``).
+* Default to ``CONCURRENT_REQUESTS`` value for ``REDIS_START_URLS_BATCH_SIZE``.
+* Renamed queue classes to a proper naming conventiong (backwards compatible).
+
 0.6.3 (2016-07-03)
 ------------------
 * Added ``REDIS_START_URLS_KEY`` setting.
